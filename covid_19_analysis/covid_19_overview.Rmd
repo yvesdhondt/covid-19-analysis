@@ -24,7 +24,7 @@ library(ggplot2)
 library(tidyverse)
 ```
 
-```{r load-data}
+```{r load-data, warning=FALSE, message=FALSE}
 update_dataset(silence = TRUE)
 data("coronavirus")
 ```
@@ -32,7 +32,7 @@ data("coronavirus")
 #  Second Wave: Belgium & Switzerland
 
 Belgium and Switzerland are among the European countries that are hit hardest by the second wave.
-Lets look at this graphically.
+Let's take a look at Belgium first.
 
 ```{r plot-belgium-overview}
 # filter data for Belgium
@@ -90,3 +90,87 @@ be.peak_comp <- be.overall_peak$peak / be.first_peak$peak
 ```
 
 The current peak is much higher than the peak from the first wave. With `r I(be.first_peak$peak)` cases in the first wave's peak and `r I(be.overall_peak$peak)` cases in the most recent wave's peak, the most recent peak has around `r I(round(be.peak_comp, digits=0))` times more cases than the first peak.
+
+Let's take a look at Switzerland next.
+
+```{r plot-switzerland-overview}
+# filter data for Switzerland
+ch.coronavirus <- coronavirus %>% 
+  filter(
+    country == "Switzerland",
+    date != max(date) # in case the latest data is not yet recorded
+  )
+
+# construct Swiss plot
+ch.plot_overview <- 
+  ggplot(
+    data = ch.coronavirus,
+    mapping = aes(x = date, y = cases)
+  ) +
+  geom_line(
+    mapping = aes(x = date, y = cases, group = type, col = type)
+  ) +
+  labs(
+    title = "Daily overview of Covid-19 in Switzerland",
+    x = "Date",
+    y = "Number of cases"
+  )
+  NULL
+
+# show Swiss plot
+ch.plot_overview
+```
+
+Testing seems to happen sporadically (with many days where 0 cases are recorded).
+To get a better view, let's take a look at just the days when we ignore the days without any cases.
+
+```{r plot-switzerland-overview-no-zero}
+
+# construct Swiss plot
+ch.plot_overview.no_zero <- 
+  ggplot(
+    data = ch.coronavirus %>% filter(cases != 0),
+    mapping = aes(x = date, y = cases)
+  ) +
+  geom_line(
+    mapping = aes(x = date, y = cases, group = type, col = type)
+  ) +
+  labs(
+    title = "Daily overview of Covid-19 in Switzerland",
+    x = "Date",
+    y = "Number of cases"
+  )
+  NULL
+
+# show Swiss plot
+ch.plot_overview.no_zero
+```
+
+As is the case for Belgium, the peak in the first wave (around May) is much lower than the most recent peak.
+
+```{r peak-difference-switzerland}
+# find the peak of confirmed cases during the first wave
+ch.first_peak <- ch.coronavirus %>% 
+  filter(
+    date > as.Date("2020-03-01")
+    & date < as.Date("2020-06-01")
+    & type == "confirmed"
+  ) %>% 
+  summarize(
+    peak = max(cases)
+  )
+
+# find the overall peak of confirmed cases
+ch.overall_peak <- ch.coronavirus %>% 
+  filter(
+    type == "confirmed"
+  ) %>% 
+  summarize(
+    peak = max(cases)
+  )
+
+# calculate the difference between the two peaks
+ch.peak_comp <- ch.overall_peak$peak / ch.first_peak$peak
+```
+
+The current peak is much higher than the peak from the first wave. With `r I(ch.first_peak$peak)` cases in the first wave's peak and `r I(ch.overall_peak$peak)` cases in the most recent wave's peak, the most recent peak has around `r I(round(ch.peak_comp, digits=0))` times more cases than the first peak.
