@@ -25,7 +25,7 @@ library(tidyverse)
 ```
 
 ```{r load-data}
-update_dataset()
+update_dataset(silence = TRUE)
 data("coronavirus")
 ```
 
