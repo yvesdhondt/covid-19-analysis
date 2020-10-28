@@ -1,0 +1,92 @@
+---
+title: 'Covid-19 Overview'
+author: "Yves D'hondt"
+date: "28/10/2020"
+output:
+  html_document:
+    highlight: zenburn
+    theme: flatly
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+---
+
+# Initialization
+
+First, all the necessary packages and the most recent `coronavirus` dataset have to be loaded.
+
+```{r load-libraries, warning=FALSE, message=FALSE}
+# devtools::install_github("RamiKrispin/coronavirus")
+library(coronavirus)
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+```
+
+```{r load-data}
+update_dataset()
+data("coronavirus")
+```
+
+#  Second Wave: Belgium & Switzerland
+
+Belgium and Switzerland are among the European countries that are hit hardest by the second wave.
+Lets look at this graphically.
+
+```{r plot-belgium-overview}
+# filter data for Belgium
+be.coronavirus <- coronavirus %>% 
+  filter(
+    country == "Belgium",
+    date != max(date) # in case the latest data is not yet recorded
+  )
+
+# construct Belgian plot
+be.plot_overview <- 
+  ggplot(
+    data = be.coronavirus,
+    mapping = aes(x = date, y = cases)
+  ) +
+  geom_line(
+    mapping = aes(x = date, y = cases, group = type, col = type)
+  ) +
+  labs(
+    title = "Daily overview of Covid-19 in Belgium",
+    x = "Date",
+    y = "Number of cases"
+  )
+  NULL
+
+# show Belgian plot
+be.plot_overview
+```
+
+As can be seen, the peak in the first wave (around May) is much lower than the most recent peak.
+
+```{r peak-difference-belgium}
+# find the peak of confirmed cases during the first wave
+be.first_peak <- be.coronavirus %>% 
+  filter(
+    date > as.Date("2020-03-01")
+    & date < as.Date("2020-06-01")
+    & type == "confirmed"
+  ) %>% 
+  summarize(
+    peak = max(cases)
+  )
+
+# find the overall peak of confirmed cases
+be.overall_peak <- be.coronavirus %>% 
+  filter(
+    type == "confirmed"
+  ) %>% 
+  summarize(
+    peak = max(cases)
+  )
+
+# calculate the difference between the two peaks
+be.peak_comp <- be.overall_peak$peak / be.first_peak$peak
+```
+
+The current peak is much higher than the peak from the first wave. With `r I(be.first_peak$peak)` cases in the first wave's peak and `r I(be.overall_peak$peak)` cases in the most recent wave's peak, the most recent peak has around `r I(round(be.peak_comp, digits=0))` times more cases than the first peak.
