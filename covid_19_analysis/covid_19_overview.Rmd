@@ -15,21 +15,23 @@ output:
 # Initialization
 
 First, all the necessary packages and the most recent `coronavirus` dataset have to be loaded.
+The `coronavirus` dataset provided by [RamiKrispin](https://github.com/RamiKrispin/coronavirus) is used here, as well as the `pop` dataset from the `wpp2019` library about country population data.
 
-```{r load-libraries, warning=FALSE, message=FALSE}
+```{r load-libraries, warning=FALSE, message=FALSE, results='hide'}
 # devtools::install_github("RamiKrispin/coronavirus")
 library(coronavirus)
 library(dplyr)
 library(ggplot2)
 library(tidyverse)
+library(wpp2019)
 ```
 
-```{r load-data, warning=FALSE, message=FALSE}
+```{r load-data, warning=FALSE, message=FALSE, results='hide'}
 update_dataset(silence = TRUE)
 data("coronavirus")
 ```
 
-#  Second Wave: Belgium & Switzerland
+# Second Wave: Belgium & Switzerland
 
 Belgium and Switzerland are among the European countries that are hit hardest by the second wave.
 Let's take a look at Belgium first.
@@ -174,3 +176,39 @@ ch.peak_comp <- ch.overall_peak$peak / ch.first_peak$peak
 ```
 
 The current peak is much higher than the peak from the first wave. With `r I(ch.first_peak$peak)` cases in the first wave's peak and `r I(ch.overall_peak$peak)` cases in the most recent wave's peak, the most recent peak has around `r I(round(ch.peak_comp, digits=0))` times more cases than the first peak.
+
+# Per Capita Daily New Cases
+
+Given that different countries have different sizes, it is pointless to compare the number of daily cases as is.
+The number of daily cases per capita is a more accurate way of comparing countries.
+More specifically, we will use the 7-day average daily cases per 100.000 inhabitants, excluding the most recent day, as a metric to compare countries.
+
+```{r per-capita-country-comparison}
+# load the country population data from the wpp2019 package
+data("pop")
+
+# calculate the 7-day average daily cases per 100k inhabitants
+country_per_captia_avg.coronavirus <- coronavirus %>% 
+  group_by(country) %>% 
+  filter(date != Sys.Date() & date >= Sys.Date() - 7 & type == "confirmed") %>% 
+  summarise(avg = mean(cases))
+
+country_per_captia_avg.coronavirus <- 
+  merge(country_per_captia_avg.coronavirus, pop, by.x = "country", by.y = "name") %>% 
+  select(
+    country,
+    avg,
+    pop_2020 = "2020"
+  ) %>% 
+  mutate(
+    avg_per_100k = 100000 * avg / (pop_2020 * 1000)
+  ) %>% 
+  arrange(
+    desc(avg_per_100k)
+  )
+
+head(country_per_captia_avg.coronavirus)
+```
+
+Some countries seem to be missing from the newly created dataset.
+The problem lies with the fact that `pop` and `coronavirus` use different names for the same country.
