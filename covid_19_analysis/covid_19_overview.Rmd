@@ -27,7 +27,7 @@ library(wpp2019)
 library(countrycode)
 ```
 
-```{r load-data, warning=FALSE, message=FALSE, results='hide'}
+```{r load-data, warning=FALSE, message=FALSE, results='hide', cache=TRUE}
 update_dataset(silence = TRUE)
 data("coronavirus")
 ```
