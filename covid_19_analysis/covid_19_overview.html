@@ -1687,7 +1687,8 @@ div.tocify {
 <span id="cb1-3"><a href="#cb1-3"></a><span class="kw">library</span>(dplyr)</span>
 <span id="cb1-4"><a href="#cb1-4"></a><span class="kw">library</span>(ggplot2)</span>
 <span id="cb1-5"><a href="#cb1-5"></a><span class="kw">library</span>(tidyverse)</span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="kw">library</span>(wpp2019)</span></code></pre></div>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="kw">library</span>(wpp2019)</span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="kw">library</span>(countrycode)</span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">update_dataset</span>(<span class="dt">silence =</span> <span class="ot">TRUE</span>)</span>
 <span id="cb2-2"><a href="#cb2-2"></a><span class="kw">data</span>(<span class="st">&quot;coronavirus&quot;</span>)</span></code></pre></div>
 </div>
@@ -1822,35 +1823,51 @@ div.tocify {
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1"></a><span class="co"># load the country population data from the wpp2019 package</span></span>
 <span id="cb14-2"><a href="#cb14-2"></a><span class="kw">data</span>(<span class="st">&quot;pop&quot;</span>)</span>
 <span id="cb14-3"><a href="#cb14-3"></a></span>
-<span id="cb14-4"><a href="#cb14-4"></a><span class="co"># calculate the 7-day average daily cases per 100k inhabitants</span></span>
-<span id="cb14-5"><a href="#cb14-5"></a>country_per_captia_avg.coronavirus &lt;-<span class="st"> </span>coronavirus <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb14-6"><a href="#cb14-6"></a><span class="st">  </span><span class="kw">group_by</span>(country) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb14-7"><a href="#cb14-7"></a><span class="st">  </span><span class="kw">filter</span>(date <span class="op">!=</span><span class="st"> </span><span class="kw">Sys.Date</span>() <span class="op">&amp;</span><span class="st"> </span>date <span class="op">&gt;=</span><span class="st"> </span><span class="kw">Sys.Date</span>() <span class="op">-</span><span class="st"> </span><span class="dv">7</span> <span class="op">&amp;</span><span class="st"> </span>type <span class="op">==</span><span class="st"> &quot;confirmed&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb14-8"><a href="#cb14-8"></a><span class="st">  </span><span class="kw">summarise</span>(<span class="dt">avg =</span> <span class="kw">mean</span>(cases))</span></code></pre></div>
+<span id="cb14-4"><a href="#cb14-4"></a><span class="co"># mutate `pop` and `coronavirus` to use the same country names</span></span>
+<span id="cb14-5"><a href="#cb14-5"></a>pop<span class="op">$</span>name &lt;-<span class="st"> </span><span class="kw">countryname</span>(pop<span class="op">$</span>name, <span class="dt">destination =</span> <span class="st">&quot;un.name.en&quot;</span>)</span>
+<span id="cb14-6"><a href="#cb14-6"></a>coronavirus<span class="op">$</span>country &lt;-<span class="st"> </span><span class="kw">countryname</span>(coronavirus<span class="op">$</span>country, <span class="dt">destination =</span> <span class="st">&quot;un.name.en&quot;</span>)</span>
+<span id="cb14-7"><a href="#cb14-7"></a></span>
+<span id="cb14-8"><a href="#cb14-8"></a><span class="co"># calculate the 7-day average daily cases per 100k inhabitants</span></span>
+<span id="cb14-9"><a href="#cb14-9"></a>country_per_captia_avg.coronavirus &lt;-<span class="st"> </span>coronavirus <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb14-10"><a href="#cb14-10"></a><span class="st">  </span><span class="kw">group_by</span>(country) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb14-11"><a href="#cb14-11"></a><span class="st">  </span><span class="kw">filter</span>(date <span class="op">!=</span><span class="st"> </span><span class="kw">Sys.Date</span>() <span class="op">&amp;</span><span class="st"> </span>date <span class="op">&gt;=</span><span class="st"> </span><span class="kw">Sys.Date</span>() <span class="op">-</span><span class="st"> </span><span class="dv">7</span> <span class="op">&amp;</span><span class="st"> </span>type <span class="op">==</span><span class="st"> &quot;confirmed&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb14-12"><a href="#cb14-12"></a><span class="st">  </span><span class="kw">summarise</span>(<span class="dt">avg =</span> <span class="kw">mean</span>(cases))</span></code></pre></div>
 <pre><code>## `summarise()` ungrouping output (override with `.groups` argument)</code></pre>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a>country_per_captia_avg.coronavirus &lt;-<span class="st"> </span></span>
-<span id="cb16-2"><a href="#cb16-2"></a><span class="st">  </span><span class="kw">merge</span>(country_per_captia_avg.coronavirus, pop, <span class="dt">by.x =</span> <span class="st">&quot;country&quot;</span>, <span class="dt">by.y =</span> <span class="st">&quot;name&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb16-3"><a href="#cb16-3"></a><span class="st">  </span><span class="kw">select</span>(</span>
-<span id="cb16-4"><a href="#cb16-4"></a>    country,</span>
-<span id="cb16-5"><a href="#cb16-5"></a>    avg,</span>
-<span id="cb16-6"><a href="#cb16-6"></a>    <span class="dt">pop_2020 =</span> <span class="st">&quot;2020&quot;</span></span>
-<span id="cb16-7"><a href="#cb16-7"></a>  ) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb16-8"><a href="#cb16-8"></a><span class="st">  </span><span class="kw">mutate</span>(</span>
-<span id="cb16-9"><a href="#cb16-9"></a>    <span class="dt">avg_per_100k =</span> <span class="dv">100000</span> <span class="op">*</span><span class="st"> </span>avg <span class="op">/</span><span class="st"> </span>(pop_<span class="dv">2020</span> <span class="op">*</span><span class="st"> </span><span class="dv">1000</span>)</span>
-<span id="cb16-10"><a href="#cb16-10"></a>  ) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb16-11"><a href="#cb16-11"></a><span class="st">  </span><span class="kw">arrange</span>(</span>
-<span id="cb16-12"><a href="#cb16-12"></a>    <span class="kw">desc</span>(avg_per_100k)</span>
-<span id="cb16-13"><a href="#cb16-13"></a>  )</span>
-<span id="cb16-14"><a href="#cb16-14"></a></span>
-<span id="cb16-15"><a href="#cb16-15"></a><span class="kw">head</span>(country_per_captia_avg.coronavirus)</span></code></pre></div>
-<pre><code>##       country        avg  pop_2020 avg_per_100k
-## 1     Belgium 13478.6667 11589.616    116.29951
-## 2     Czechia 12404.0000 10708.982    115.82800
-## 3  Luxembourg   526.3333   625.976     84.08203
-## 4    Slovenia  1601.1667  2078.932     77.01871
-## 5     Armenia  2019.3333  2963.234     68.14627
-## 6 Switzerland  5821.0000  8654.618     67.25889</code></pre>
-<p>Some countries seem to be missing from the newly created dataset. The problem lies with the fact that <code>pop</code> and <code>coronavirus</code> use different names for the same country.</p>
+<span id="cb16-2"><a href="#cb16-2"></a><span class="st">  </span><span class="kw">merge</span>(</span>
+<span id="cb16-3"><a href="#cb16-3"></a>    country_per_captia_avg.coronavirus, </span>
+<span id="cb16-4"><a href="#cb16-4"></a>    pop, </span>
+<span id="cb16-5"><a href="#cb16-5"></a>    <span class="dt">by.x =</span> <span class="st">&quot;country&quot;</span>, </span>
+<span id="cb16-6"><a href="#cb16-6"></a>    <span class="dt">by.y =</span> <span class="st">&quot;name&quot;</span>,</span>
+<span id="cb16-7"><a href="#cb16-7"></a>    <span class="dt">all =</span> <span class="ot">FALSE</span></span>
+<span id="cb16-8"><a href="#cb16-8"></a>  ) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb16-9"><a href="#cb16-9"></a><span class="st">  </span><span class="kw">select</span>(</span>
+<span id="cb16-10"><a href="#cb16-10"></a>    country,</span>
+<span id="cb16-11"><a href="#cb16-11"></a>    avg,</span>
+<span id="cb16-12"><a href="#cb16-12"></a>    <span class="dt">pop_2020 =</span> <span class="st">&quot;2020&quot;</span></span>
+<span id="cb16-13"><a href="#cb16-13"></a>  ) <span class="op">%&gt;%</span></span>
+<span id="cb16-14"><a href="#cb16-14"></a><span class="st">  </span><span class="co"># omit any NA values since these come from countries that are unknown/not in both datasets</span></span>
+<span id="cb16-15"><a href="#cb16-15"></a><span class="st">  </span><span class="kw">na.omit</span>() <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb16-16"><a href="#cb16-16"></a><span class="st">  </span><span class="kw">mutate</span>(</span>
+<span id="cb16-17"><a href="#cb16-17"></a>    <span class="dt">avg_per_100k =</span> <span class="dv">100000</span> <span class="op">*</span><span class="st"> </span>avg <span class="op">/</span><span class="st"> </span>(pop_<span class="dv">2020</span> <span class="op">*</span><span class="st"> </span><span class="dv">1000</span>)</span>
+<span id="cb16-18"><a href="#cb16-18"></a>  ) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb16-19"><a href="#cb16-19"></a><span class="st">  </span><span class="kw">arrange</span>(</span>
+<span id="cb16-20"><a href="#cb16-20"></a>    <span class="kw">desc</span>(avg_per_100k)</span>
+<span id="cb16-21"><a href="#cb16-21"></a>  )</span>
+<span id="cb16-22"><a href="#cb16-22"></a></span>
+<span id="cb16-23"><a href="#cb16-23"></a><span class="kw">head</span>(country_per_captia_avg.coronavirus, <span class="dt">n =</span> <span class="dv">10</span>)</span></code></pre></div>
+<pre><code>##           country     avg  pop_2020 avg_per_100k
+## 1         Belgium 13529.0 11589.616    116.73381
+## 2  Czech Republic 11891.0 10708.982    111.03763
+## 3      Luxembourg   545.6   625.976     87.15989
+## 4        Slovenia  1619.6  2078.932     77.90539
+## 5         Armenia  2056.0  2963.234     69.38365
+## 6     Switzerland  5866.0  8654.618     67.77884
+## 7         Georgia  1819.0  3989.175     45.59840
+## 8         Croatia  1784.2  4105.268     43.46123
+## 9        Slovakia  2310.6  5459.643     42.32145
+## 10          Spain 18605.0 46754.783     39.79272</code></pre>
+<p>The population (<code>pop_2020</code>) is listed in thousands, while the other values are listed in real values. As can be seen from the table above, Europe is once again one of the hardest hit countries by the second wave. The 10 worst countries in daily confirmed cases per capita are all European.</p>
 </div>
 
 
